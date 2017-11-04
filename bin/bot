@@ -4,5 +4,7 @@ require_relative '../lib/cominout_bot'
 require_relative '../lib/parse_imdb'
 
 # CominoutBot.new.run
+puts 'parsing IMDB.com ...'
 ParseImdb.new.run
+puts 'starting bot'
 CominoutBot.new.run

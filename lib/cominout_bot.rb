@@ -6,26 +6,26 @@ class CominoutBot
 
   def initialize
     @db = Redis.new
+    @actors = @db.smembers(ACTORS)
+    @actors.map! { |actor| actor.force_encoding('utf-8') }
+    @actors_dc = @actors.map(&:downcase)
   end
 
   def run
     Telegram::Bot::Client.run(TOKEN) do |bot|
       bot.listen do |message|
-        cmd = message.text
+        cmd = message.text.downcase
         case cmd
         when '/start'
           msg = "Hello, #{message.from.first_name}"
         when '/end'
           msg = "Bye, #{message.from.first_name}!"
         when '/list'
-          actors = @db.smembers(ACTORS).map { |i| i.force_encoding('utf-8') }
-          msg = "All actors:\n" + actors.join("\n")
+          msg = "All actors:\n" + @actors.join("\n")
         else
-          msg = if @db.sismember(ACTORS, cmd)
-                  'Yes'
-                else
-                  'No'
-                end
+          variants = cmd.split(' ').permutation
+          bool_variants = variants.map { |i| @actors_dc.include?(i.join(' ')) }
+          msg = bool_variants.include?(true) ? 'Yes' : 'No'
         end
         bot.api.send_message(chat_id: message.chat.id, text: msg)
       end

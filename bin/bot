@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+
+require_relative '../lib/cominout_bot'
+
+# (If you use this, don't forget to add pry to your Gemfile!)
+# require "pry"
+# Pry.start
+
+CominoutBot.new.run

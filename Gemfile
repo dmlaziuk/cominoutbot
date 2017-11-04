@@ -1,5 +1,7 @@
-# frozen_string_literal: true
 source 'https://rubygems.org'
-ruby '2.4.1'
-gem 'telegram-bot-ruby'
 
+ruby '2.4.1'
+
+gem 'mechanize'
+gem 'redis'
+gem 'telegram-bot-ruby'

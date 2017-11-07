@@ -1,4 +1,3 @@
-require 'json'
 require 'redis'
 require 'mechanize'
 
@@ -47,40 +46,14 @@ class ParseWikipedia
 
   private
 
-  def parse(textbox)
-    first_name = []
-    surname = []
-    is_composite_name = ->(name) { name.include?(' ') || name.include?(',') }
-    is_simple_name = ->(name) { !name.include?(' ') && !name.include?(',') }
-    composite_or_surname = lambda do |name|
-      if is_composite_name[name]
-        nm, sn = parse_composite_name(name)
-        first_name << nm
-        surname << sn
-      else
-        surname << name
-      end
-    end
-    composite_or_first_name = lambda do |name|
-      if is_composite_name[name]
-        nm, sn = parse_composite_name(name)
-        first_name << nm
-        surname << sn
-      else
-        first_name << name
-      end
-    end
+  def parse(wikitext)
 
-    txt = textbox.split /^\|-[^\n]*?\n/
+    txt = wikitext.split /^\|-[^\n]*?\n/
     txt.shift
-    #txt.shift if txt.first.include?('style=')
     #txt.each_with_index { |item, index| puts "#{index}: #{item}" }
     txt.each(&:strip!)
     txt.each_with_index do |item, index|
       next if item.include?('style=')
-      #i = item.index /\|}\n/
-      #i = -1 if i.nil?
-      #arr = item[0..i].split("\n")
       arr = item.split("\n")
       names = arr[0]
       lifetime = arr[1]
@@ -97,76 +70,69 @@ class ParseWikipedia
       names = names[2..-1]
       next if names.nil?
       puts "#{index}: #{names}"
-      puts "#{index}:NIL" if names.nil?
-      names = names.split('|')
-      names.map! do |name|
-        new_name = name.gsub(/\(.*?\)/, '')
-        new_name = new_name.gsub(/<.*?>/, '')
-        new_name = new_name.strip
-        new_name = nil if new_name.include?('=') || new_name == ''
-        new_name
+      parse_names(names)
       end
-      names.compact!
-      first_name = []
-      surname = []
-      case names.size
-        when 1
-          surname << names.first
-        when 2
-          if is_simple_name[names.first] && is_simple_name[names.last]
-            first_name << names.first
-            surname << names.last
-          else
-            if is_simple_name[names.last]
-              first_name << names.first
-              surname << names.last
-            else
-              first_name << names.last
-              surname << names.first
-            end
-          end
-        when 3
-          first_name << names[0]
-          surname << names[1]
-          first_name << names[2]
-        else # >= 4 names
-          first_name << names[0]
-          surname << names[1]
-          first_name << names[2]
-          first_name << names[3]
-      end
-      parse_first_name = first_name.join(' ')
-      parse_first_name.gsub!(',', ' ')
-      parse_first_name.gsub!('  ', ' ')
-      parse_first_name = parse_first_name.split(' ')
-      parse_first_name.uniq!
-      parse_surname = surname.join(' ')
-      parse_surname.gsub!(',', ' ')
-      parse_surname.gsub!('  ', ' ')
-      parse_surname = parse_surname.split(' ')
-      parse_surname.uniq!
-      parse_first_name = parse_first_name - parse_surname
-      parse_first_name = parse_first_name.join(' ')
-      parse_surname = parse_surname.join(' ')
-      #first_name.uniq!
-      #first_name.map! {|name| name unless name == ''}
-      #first_name.compact!
-      #surname.uniq!
-      #surname.map! {|name| name unless name == ''}
-      #surname.compact!
-      puts "name: #{parse_first_name}"
-      puts "surname: #{parse_surname}"
-      puts "\n"
-    end
-
   end
 
-  def parse_composite_name(name)
-    if name.include?(',')
-      composite_name = name.split(',')
-      return [composite_name.last.strip!, composite_name.first.strip]
+  def parse_names(txt)
+    first_name = []
+    surname = []
+    is_simple_name = ->(name) { !name.include?(' ') && !name.include?(',') }
+    parse_two_names = lambda do |names|
+      if is_simple_name[names[0]] && is_simple_name[names[1]]
+        first_name << names[0]
+        surname << names[1]
+      else
+        if is_simple_name[names[1]]
+          first_name << names[0]
+          surname << names[1]
+        else
+          first_name << names[1]
+          surname << names[0]
+        end
+      end
     end
-    composite_name = name.split(' ')
-    return [composite_name.first, composite_name.last]
+
+    names = txt.split('|')
+    names.map! do |name|
+      new_name = name.gsub(/\(.*?\)/, '')
+      new_name = new_name.gsub(/<.*?>/, '')
+      new_name = new_name.strip
+      new_name = nil if new_name.include?('=') || new_name == ''
+      new_name
+    end
+    names.compact!
+    first_name = []
+    surname = []
+    case names.size
+      when 1
+        surname << names.first
+      when 2
+        parse_two_names[names]
+      when 3
+        parse_two_names[names]
+        first_name << names[2]
+      else # >= 4 names
+        parse_two_names[names]
+        first_name << names[2]
+        first_name << names[3]
+    end
+    # remove duplicates from first_name
+    first_name = first_name.join(' ')
+    first_name.gsub!(',', ' ')
+    first_name.gsub!('  ', ' ')
+    first_name = first_name.split(' ')
+    first_name.uniq!
+    surname = surname.join(' ')
+    surname.gsub!(',', ' ')
+    surname.gsub!('  ', ' ')
+    surname = surname.split(' ')
+    surname.uniq!
+    first_name = first_name - surname
+    first_name = first_name.join(' ')
+    surname = surname.join(' ')
+    puts "name: #{first_name}"
+    puts "surname: #{surname}"
+    puts "\n"
   end
 end

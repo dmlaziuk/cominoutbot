@@ -6,7 +6,26 @@ class ParseWikipedia
   WIKI_PAGE = 'https://en.wikipedia.org/wiki/List_of_gay,_lesbian_or_bisexual_people'.freeze
   WIKI_LINKS = '//*[@id="mw-content-text"]/div/div[3]/ul/li/a'.freeze
   ACTORS = 'actors:wiki'.freeze
-  TEST_PAGE = 'https://en.wikipedia.org/w/index.php?title=List_of_gay,_lesbian_or_bisexual_people:_A&action=edit'.freeze
+  #TEST_PAGE = 'https://en.wikipedia.org/w/index.php?title=List_of_gay,_lesbian_or_bisexual_people:_A&action=edit'
+  #TEST_PAGE = 'https://en.wikipedia.org/w/index.php?title=List_of_gay,_lesbian_or_bisexual_people:_Ba–Bh&action=edit'
+  #TEST_PAGE = 'https://en.wikipedia.org/w/index.php?title=List_of_gay,_lesbian_or_bisexual_people:_Bi–Bz&action=edit'
+  #TEST_PAGE = 'https://en.wikipedia.org/w/index.php?title=List_of_gay,_lesbian_or_bisexual_people:_C&action=edit'
+  #TEST_PAGE = 'https://en.wikipedia.org/w/index.php?title=List_of_gay,_lesbian_or_bisexual_people:_D–E&action=edit'
+  #TEST_PAGE = 'https://en.wikipedia.org/w/index.php?title=List_of_gay,_lesbian_or_bisexual_people:_F&action=edit'
+  #TEST_PAGE = 'https://en.wikipedia.org/w/index.php?title=List_of_gay,_lesbian_or_bisexual_people:_G&action=edit'
+  #TEST_PAGE = 'https://en.wikipedia.org/w/index.php?title=List_of_gay,_lesbian_or_bisexual_people:_H&action=edit'
+  #TEST_PAGE = 'https://en.wikipedia.org/w/index.php?title=List_of_gay,_lesbian_or_bisexual_people:_I–J&action=edit'
+  #TEST_PAGE = 'https://en.wikipedia.org/w/index.php?title=List_of_gay,_lesbian_or_bisexual_people:_K&action=edit'
+  #TEST_PAGE = 'https://en.wikipedia.org/w/index.php?title=List_of_gay,_lesbian_or_bisexual_people:_L&action=edit'
+  #TEST_PAGE = 'https://en.wikipedia.org/w/index.php?title=List_of_gay,_lesbian_or_bisexual_people:_M&action=edit'
+  #TEST_PAGE = 'https://en.wikipedia.org/w/index.php?title=List_of_gay,_lesbian_or_bisexual_people:_N–O&action=edit'
+  #TEST_PAGE = 'https://en.wikipedia.org/w/index.php?title=List_of_gay,_lesbian_or_bisexual_people:_P–Q&action=edit'
+  #TEST_PAGE = 'https://en.wikipedia.org/w/index.php?title=List_of_gay,_lesbian_or_bisexual_people:_R&action=edit'
+  #TEST_PAGE = 'https://en.wikipedia.org/w/index.php?title=List_of_gay,_lesbian_or_bisexual_people:_Sa–Sc&action=edit'
+  #TEST_PAGE = 'https://en.wikipedia.org/w/index.php?title=List_of_gay,_lesbian_or_bisexual_people:_Sd–Si&action=edit'
+  #TEST_PAGE = 'https://en.wikipedia.org/w/index.php?title=List_of_gay,_lesbian_or_bisexual_people:_Sj–Sz&action=edit'
+  #TEST_PAGE = 'https://en.wikipedia.org/w/index.php?title=List_of_gay,_lesbian_or_bisexual_people:_T–V&action=edit'
+  TEST_PAGE = 'https://en.wikipedia.org/w/index.php?title=List_of_gay,_lesbian_or_bisexual_people:_W–Z&action=edit'
 
   def initialize
     @agent = Mechanize.new
@@ -28,10 +47,11 @@ class ParseWikipedia
 
   private
 
-  def parse(txt)
+  def parse(textbox)
     first_name = []
     surname = []
     is_composite_name = ->(name) { name.include?(' ') || name.include?(',') }
+    is_simple_name = ->(name) { !name.include?(' ') && !name.include?(',') }
     composite_or_surname = lambda do |name|
       if is_composite_name[name]
         nm, sn = parse_composite_name(name)
@@ -51,53 +71,91 @@ class ParseWikipedia
       end
     end
 
-    txt = txt.split('{| class="wikitable sortable"').last
-    txt = txt.split('|}').first
-    txt = txt.split('|- valign="top"').last
-    txt = txt.split("|-\n")
+    txt = textbox.split /^\|-[^\n]*?\n/
+    txt.shift
+    #txt.shift if txt.first.include?('style=')
+    #txt.each_with_index { |item, index| puts "#{index}: #{item}" }
     txt.each(&:strip!)
     txt.each_with_index do |item, index|
+      next if item.include?('style=')
+      #i = item.index /\|}\n/
+      #i = -1 if i.nil?
+      #arr = item[0..i].split("\n")
       arr = item.split("\n")
-      next if arr[0].nil?
-      arr[0].gsub!('{', '')
-      arr[0].gsub!('}', '')
-      arr[0].gsub!('[', '')
-      arr[0].gsub!(']', '')
-      arr[0].gsub!('sortname|', '')
-      arr[0].gsub!('sort|', '')
-      names = arr[0][2..-1].split('|')
-      puts "#{index}: #{arr[0][2..-1]}"
-      names.each do |name|
-        # remove (*)
-        name.gsub!(/\(.*?\)/, '')
-        name.strip!
+      names = arr[0]
+      lifetime = arr[1]
+      nationality = arr[2]
+      notable = arr[3]
+      notes = arr[4]
+      next if names.nil?
+      names.gsub!('{', '')
+      names.gsub!('}', '')
+      names.gsub!('[', '')
+      names.gsub!(']', '')
+      names.gsub!('sortname|', '')
+      names.gsub!('sort|', '')
+      names = names[2..-1]
+      next if names.nil?
+      puts "#{index}: #{names}"
+      puts "#{index}:NIL" if names.nil?
+      names = names.split('|')
+      names.map! do |name|
+        new_name = name.gsub(/\(.*?\)/, '')
+        new_name = new_name.gsub(/<.*?>/, '')
+        new_name = new_name.strip
+        new_name = nil if new_name.include?('=') || new_name == ''
+        new_name
       end
+      names.compact!
       first_name = []
       surname = []
       case names.size
         when 1
-          composite_or_surname[names.first]
+          surname << names.first
         when 2
-          first_name << names.first
-          composite_or_surname[names.last]
+          if is_simple_name[names.first] && is_simple_name[names.last]
+            first_name << names.first
+            surname << names.last
+          else
+            if is_simple_name[names.last]
+              first_name << names.first
+              surname << names.last
+            else
+              first_name << names.last
+              surname << names.first
+            end
+          end
         when 3
           first_name << names[0]
-          surname << names [1]
-          composite_or_first_name[names[2]]
+          surname << names[1]
+          first_name << names[2]
         else # >= 4 names
           first_name << names[0]
-          surname << names [1]
-          composite_or_first_name[names[2]]
-          composite_or_first_name[names[3]]
+          surname << names[1]
+          first_name << names[2]
+          first_name << names[3]
       end
-      first_name.uniq!
-      first_name.map! {|name| name unless name == ''}
-      first_name.compact!
-      surname.uniq!
-      surname.map! {|name| name unless name == ''}
-      surname.compact!
-      puts "name: #{first_name}"
-      puts "surname: #{surname}"
+      parse_first_name = first_name.join(' ')
+      parse_first_name.gsub!(',', ' ')
+      parse_first_name.gsub!('  ', ' ')
+      parse_first_name = parse_first_name.split(' ')
+      parse_first_name.uniq!
+      parse_surname = surname.join(' ')
+      parse_surname.gsub!(',', ' ')
+      parse_surname.gsub!('  ', ' ')
+      parse_surname = parse_surname.split(' ')
+      parse_surname.uniq!
+      parse_first_name = parse_first_name - parse_surname
+      parse_first_name = parse_first_name.join(' ')
+      parse_surname = parse_surname.join(' ')
+      #first_name.uniq!
+      #first_name.map! {|name| name unless name == ''}
+      #first_name.compact!
+      #surname.uniq!
+      #surname.map! {|name| name unless name == ''}
+      #surname.compact!
+      puts "name: #{parse_first_name}"
+      puts "surname: #{parse_surname}"
       puts "\n"
     end
 

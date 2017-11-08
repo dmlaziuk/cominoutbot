@@ -1,5 +1,6 @@
 require 'redis'
 require 'mechanize'
+require 'wikicloth'
 
 class ParseWikipedia
   WIKI_PAGE = 'https://en.wikipedia.org/wiki/List_of_gay,_lesbian_or_bisexual_people'.freeze
@@ -55,26 +56,38 @@ class ParseWikipedia
     txt.each_with_index do |item, index|
       next if item.include?('style=')
       arr = item.split("\n")
-      names = arr[0]
-      lifetime = arr[1]
-      nationality = arr[2]
-      notable = arr[3]
-      notes = arr[4]
-      next if names.nil?
-      names.gsub!('{', '')
-      names.gsub!('}', '')
-      names.gsub!('[', '')
-      names.gsub!(']', '')
-      names.gsub!('sortname|', '')
-      names.gsub!('sort|', '')
-      names = names[2..-1]
-      next if names.nil?
+      next if arr.empty?
+      names = arr[0][2..-1]
       puts "#{index}: #{names}"
-      parse_names(names)
+      next if names.nil?
+      lifetime = arr[1][2..-1]
+      nationality = arr[2][2..-1]
+      notable = arr[3][2..-1]
+      notes = arr[4][3..-1]
+      names.gsub!(/\(.*?\)/, ' ')
+      names.gsub!(/<.*?>/, ' ')
+      names = names.scan /[^|]+/
+      names.map! do |name|
+        item = name.scan /[^\s\[\]{}]+/
+        item -= %w[sort sortname]
+        item.join(' ') if item.any?
       end
+      names.compact!
+      next if names.empty?
+      first_name, surname = parse_names(names)
+      puts "name: #{first_name}"
+      puts "surname: #{surname}"
+      puts "lifetime: #{lifetime}"
+      puts "nationality: #{nationality}"
+      puts "notable: #{notable}"
+      puts "notes: #{notes}"
+      puts 'HTML:'
+      puts WikiCloth::Parser.new(data: notes).to_html(noedit: true)
+      puts "\n"
+    end
   end
 
-  def parse_names(txt)
+  def parse_names(arr)
     first_name = []
     surname = []
     is_simple_name = ->(name) { !name.include?(' ') && !name.include?(',') }
@@ -93,13 +106,13 @@ class ParseWikipedia
       end
     end
 
-    names = txt.split('|')
+    names = arr
     names.map! do |name|
-      new_name = name.gsub(/\(.*?\)/, '')
-      new_name = new_name.gsub(/<.*?>/, '')
-      new_name = new_name.strip
-      new_name = nil if new_name.include?('=') || new_name == ''
-      new_name
+      if name.include?('=') || name == ''
+        nil
+      else
+        name
+      end
     end
     names.compact!
     first_name = []
@@ -131,8 +144,6 @@ class ParseWikipedia
     first_name = first_name - surname
     first_name = first_name.join(' ')
     surname = surname.join(' ')
-    puts "name: #{first_name}"
-    puts "surname: #{surname}"
-    puts "\n"
+    [first_name, surname]
   end
 end

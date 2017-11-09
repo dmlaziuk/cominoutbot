@@ -3,7 +3,7 @@ require 'mechanize'
 
 class ParseImdb
   IMDB_PAGE = 'http://www.imdb.com/list/ls072706884/'.freeze
-  ACTORS = 'actors:imdb'.freeze
+  IMDB_DB = 'lgbt:imdb'.freeze
 
   def initialize
     @agent = Mechanize.new
@@ -13,6 +13,6 @@ class ParseImdb
   def run
     page = @agent.get(IMDB_PAGE)
     actors = page.css('.info').map { |item| item.text.strip.split("\n").first }
-    @db.sadd(ACTORS, actors)
+    @db.sadd(IMDB_DB, actors)
   end
 end

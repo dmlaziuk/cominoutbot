@@ -1,2 +1,2 @@
-bot: ruby bin/bot
+bot: ruby comingoutbot.rb
 

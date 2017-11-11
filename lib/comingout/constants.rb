@@ -1,4 +1,8 @@
 module Comingout
+  IMDB_DB = 'lgbt:imdb'.freeze
+  WIKI_DB = 'lgbt:wiki'.freeze
+  FERRET = 'lgbt-wiki'.freeze
+  TELEGRAM_TOKEN = '468538105:AAGDePSk0XwZU7J2QvsLwBDU7i24adkVit4'.freeze
   RU_EN = {
       'А' => 'A', 'а' => 'a', 'Б' => 'B', 'б' => 'b', 'В' => 'V', 'в' => 'v', 'Г' => 'G', 'г' => 'g', 'Д' => 'D', 'д' => 'd',
       'Е' => 'E', 'е' => 'e', 'Ё' => 'Jo', 'ё' => 'jo', 'Ж' => 'Zh', 'ж' => 'zh', 'З' => 'Z', 'з' => 'z', 'И' => 'I',

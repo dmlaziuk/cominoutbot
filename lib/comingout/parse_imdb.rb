@@ -1,9 +1,8 @@
 require 'redis'
 require 'mechanize'
+require_relative 'constants'
 
 module Comingout
-  IMDB_DB = 'lgbt:imdb'.freeze
-
   class ParseImdb
     IMDB_PAGE = 'http://www.imdb.com/list/ls072706884/'.freeze
 
@@ -21,5 +20,4 @@ module Comingout
       puts "\n#{count} entries added"
     end
   end
-
 end

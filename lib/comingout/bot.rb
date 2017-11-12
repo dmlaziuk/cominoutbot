@@ -19,8 +19,15 @@ module Comingout
 
       Telegram::Bot::Client.run(Comingout::TELEGRAM_TOKEN) do |bot|
         bot.listen do |chat|
-          msg = dialog(bot, chat)
-          say(bot, chat, msg)
+          cmd = chat.text
+          case cmd
+          when '/start'
+            msg = "Hello, #{message.from.first_name}!\n"
+            msg<< "This bot is for finding out celebrities coming out."
+            say(bot, chat, msg)
+          else
+            say(bot, chat, dialog(bot, chat))
+          end
         end
       end
     end

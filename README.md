@@ -50,7 +50,7 @@ lgbt:name:kevin => "13" "14"
 lgbt:name:williamson => "14"
 ```
 
-Также в момент парсинга создается Ferret индекс для неявного поиска (fuzzy search)
+Также в момент парсинга создается Ferret индекс для неявного поиска (fuzzy search).
 
 При обработке запросов сначала проходит поиск по единичным именам в базе Redis,
 если ничего не найдено, то запускается неявный поиск Ferret с транслитерацией полного имени.
@@ -58,5 +58,7 @@ lgbt:name:williamson => "14"
 Данный бот запущен на [heroku.com](https://herokuapp.com) и доступен в Telegram [@cominoutbot](https://t.me/cominoutbot)
 
 При написании бота использовалась следующая литература:
+
 1. [Маленькая книга о Redis](https://github.com/kondratovich/the-little-redis-book/blob/master/ru/redis-ru.pdf)
+
 2. [Ferret](https://www.safaribooksonline.com/library/view/ferret/9780596519407/?utm_medium=referral&utm_campaign=publisher&utm_source=oreilly&utm_content=buybox)

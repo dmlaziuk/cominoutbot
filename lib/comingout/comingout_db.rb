@@ -11,7 +11,7 @@ module Comingout
     def initialize
       @redis = Redis.new(url: ENV["REDIS_URL"]) # url added for heroku.com
       @redis.flushall
-      @ferret = Ferret::I.new(path: Comingout::FERRET, key: :id)
+      @ferret = Ferret::I.new(key: :id)
       @redis.setnx Comingout::DB_INDEX, 0
     end
 

@@ -1,10 +1,6 @@
 module Comingout
   DB = 'lgbt'.freeze
   DB_INDEX = 'lgbt:index'.freeze
-  DB_IMDB = 'lgbt:imdb'.freeze
-  DB_WIKI = 'lgbt:wiki'.freeze
-  DB_RU_WIKI = 'lgbt:ruwiki'.freeze
-  FERRET = '.lgbt'.freeze
   TELEGRAM_TOKEN = '468538105:AAGDePSk0XwZU7J2QvsLwBDU7i24adkVit4'.freeze
   RU_EN = {
       'А' => 'A', 'а' => 'a', 'Б' => 'B', 'б' => 'b', 'В' => 'V', 'в' => 'v', 'Г' => 'G', 'г' => 'g', 'Д' => 'D', 'д' => 'd',

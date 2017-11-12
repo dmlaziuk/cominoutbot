@@ -9,7 +9,7 @@ module Comingout
     attr_reader :redis, :ferret
 
     def initialize
-      @redis = Redis.new
+      @redis = Redis.new(url: ENV["REDIS_URL"]) # url added for heroku.com
       @ferret = Ferret::I.new(path: Comingout::FERRET, key: :id)
       @redis.setnx Comingout::DB_INDEX, 0
     end

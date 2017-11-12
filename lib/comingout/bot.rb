@@ -22,7 +22,7 @@ module Comingout
           cmd = chat.text
           case cmd
           when '/start'
-            msg = "Hello, #{message.from.first_name}!\n"
+            msg = "Hello, #{chat.from.first_name}!\n"
             msg<< "This bot is for finding out celebrities coming out."
             say(bot, chat, msg)
           else

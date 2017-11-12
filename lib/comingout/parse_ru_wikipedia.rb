@@ -8,9 +8,9 @@ module Comingout
 
     WIKI_PAGE = 'https://ru.wikipedia.org/wiki/Проект:ЛГБТ/Списки/Известные_лесбиянки,_геи_и_бисексуалы_России'.freeze
 
-    def initialize
+    def initialize(db)
       @agent = Mechanize.new
-      @db = Comingout::ComingoutDB.new
+      @db = db
       @count = 0
     end
 
@@ -19,8 +19,6 @@ module Comingout
       print '.'
       page = @agent.get(WIKI_PAGE)
       parse_table(page)
-      @db.redis.set Comingout::DB_RU_WIKI, 1 # flag
-      @db.close
       puts "\n#{@count} entries added"
     end
 

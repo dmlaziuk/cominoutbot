@@ -12,6 +12,11 @@ module Comingout
     end
 
     def run
+      Comingout::ParseWikipedia.new(@db).parse
+      Comingout::ParseRuWikipedia.new(@db).parse
+      Comingout::ParseImdb.new(@db).parse
+      puts 'Starting bot'
+
       Telegram::Bot::Client.run(Comingout::TELEGRAM_TOKEN) do |bot|
         bot.listen do |chat|
           msg = dialog(bot, chat)

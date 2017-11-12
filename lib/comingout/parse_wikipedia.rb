@@ -8,9 +8,9 @@ module Comingout
 
     WIKI_PAGE = 'https://en.wikipedia.org/wiki/List_of_gay,_lesbian_or_bisexual_people'.freeze
 
-    def initialize
+    def initialize(db)
       @agent = Mechanize.new
-      @db = Comingout::ComingoutDB.new
+      @db = db
       @count = 0
     end
 
@@ -24,8 +24,6 @@ module Comingout
         page = @agent.get(url)
         parse_table(page)
       end
-      @db.redis.set Comingout::DB_WIKI, 1 # flag
-      @db.close
       puts "\n#{@count} entries added"
     end
 

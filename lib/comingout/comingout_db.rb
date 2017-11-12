@@ -10,6 +10,7 @@ module Comingout
 
     def initialize
       @redis = Redis.new(url: ENV["REDIS_URL"]) # url added for heroku.com
+      @redis.flushall
       @ferret = Ferret::I.new(path: Comingout::FERRET, key: :id)
       @redis.setnx Comingout::DB_INDEX, 0
     end
@@ -40,11 +41,6 @@ module Comingout
 
     def get_by_index(index)
       @redis.hgetall "#{Comingout::DB}:#{index}"
-    end
-
-    def close
-      @ferret.optimize
-      @ferret.close
     end
   end
 end

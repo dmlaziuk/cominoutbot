@@ -8,9 +8,9 @@ module Comingout
 
     IMDB_PAGE = 'http://www.imdb.com/list/ls072706884/'.freeze
 
-    def initialize
+    def initialize(db)
       @agent = Mechanize.new
-      @db = Comingout::ComingoutDB.new
+      @db = db
     end
 
     def parse
@@ -28,8 +28,6 @@ module Comingout
         count += 1 if @db.addnx(name, uri, note)
         total_count += 1
       end
-      @db.redis.set Comingout::DB_IMDB, 1 # flag
-      @db.close
       puts "\n#{count} entries added out of #{total_count}"
     end
   end

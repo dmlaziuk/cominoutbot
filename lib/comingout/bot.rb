@@ -1,14 +1,14 @@
 require 'set'
-require 'ferret'
 require 'telegram/bot'
 require_relative 'constants'
+require_relative 'comingout_db'
 
 module Comingout
+
   class Bot
 
     def initialize
-      @db = Redis.new
-      @ferret = Ferret::I.new(path: Comingout::FERRET)
+      @db = Comingout::ComingoutDB.new
     end
 
     def run
@@ -29,7 +29,7 @@ module Comingout
     def do_you_mean(bot, chat)
       chat_text = Comingout.translit(chat.text.downcase)
       chat_text.gsub! /[*?]/, '' # remove wildcards search
-      found = @ferret.search("#{chat_text}~") # fuzzy search
+      found = @db.ferret.search("#{chat_text}~") # fuzzy search
       max_score = found[:max_score]
       hits = found[:hits]
       return 'Found no data' if hits.empty?
@@ -37,18 +37,17 @@ module Comingout
       hits.each { |item| hits_max << item if item[:score] == max_score }
       msg = "There are #{hits.size} persons with given name:\n"
       hits.each_with_index do |db_index, counter|
-        doc = @ferret[db_index[:doc]]
-        person = @db.hgetall "#{Comingout::WIKI_DB}:#{doc[:id]}"
+        doc = @db.ferret[db_index[:doc]]
+        person = @db.get_by_index(doc[:id])
         msg << "#{counter + 1}. #{person['name']}\n"
       end
       if hits_max.size == 1
-        doc = @ferret[hits_max.first[:doc]]
-        person = @db.hgetall "#{Comingout::WIKI_DB}:#{doc[:id]}"
+        doc = @db.ferret[hits_max.first[:doc]]
+        person = @db.get_by_index(doc[:id])
         say(bot, chat, "Do you mean <b>#{person['name']}?</b>")
         bot.listen do |request|
           if %w[yes да].include?(request.text.downcase)
-            msg = "<a href='#{person['uri']}'>#{person['name']}</a>\n"
-            msg << "<b>Coming out:</b> <i>#{person['note']}</i>"
+            msg = comeout(person)
           end
           break
         end
@@ -60,24 +59,28 @@ module Comingout
       chat_text = chat.text.downcase
       commands = chat_text.split(' ')
       lists = commands.map do |word|
-        Set.new @db.lrange "#{Comingout::WIKI_DB}:name:#{word}", 0, -1
+        Set.new @db.get_by_name(word)
       end
       union = lists.inject { |un, i| un + i }
       return do_you_mean(bot, chat) if union.empty?
       xsection = lists.inject { |intersection, i| intersection & i }
       arr = xsection.empty? ? union.to_a : xsection.to_a
       if arr.size == 1
-        person = @db.hgetall "#{Comingout::WIKI_DB}:#{arr.first}"
-        msg = "<a href='#{person['uri']}'>#{person['name']}</a>\n"
-        msg << "<b>Coming out:</b> <i>#{person['note']}</i>"
+        person = @db.get_by_index(arr.first)
+        msg = comeout(person)
       else
         msg = "There are #{arr.size} persons with given name:\n"
         arr.each_with_index do |db_index, counter|
-          person = @db.hgetall "#{Comingout::WIKI_DB}:#{db_index}"
+          person = @db.get_by_index(db_index)
           msg << "#{counter + 1}. #{person['name']}\n"
         end
       end
       msg
+    end
+
+    def comeout(person)
+      msg = "<a href='#{person['uri']}'>#{person['name']}</a>\n"
+      msg << "<b>Coming out:</b> <i>#{person['note']}</i>"
     end
   end
 end

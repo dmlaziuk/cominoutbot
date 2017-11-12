@@ -4,9 +4,7 @@ require_relative 'constants'
 require_relative 'comingout_db'
 
 module Comingout
-
   class Bot
-
     def initialize
       @db = Comingout::ComingoutDB.new
     end
@@ -23,7 +21,7 @@ module Comingout
           case cmd
           when '/start'
             msg = "Hello, #{chat.from.first_name}!\n"
-            msg<< "This bot is for finding out celebrities coming out."
+            msg << 'This bot is for finding out celebrities coming out.'
             say(bot, chat, msg)
           else
             say(bot, chat, dialog(bot, chat))
@@ -40,7 +38,7 @@ module Comingout
 
     def do_you_mean(bot, chat)
       chat_text = Comingout.translit(chat.text.downcase)
-      chat_text.gsub! /[*?]/, '' # remove wildcards search
+      chat_text.gsub!(/[*?]/, '') # remove wildcard search
       found = @db.ferret.search("#{chat_text}~") # fuzzy search
       max_score = found[:max_score]
       hits = found[:hits]
@@ -58,9 +56,7 @@ module Comingout
         person = @db.get_by_index(doc[:id])
         say(bot, chat, "Do you mean <b>#{person['name']}?</b>")
         bot.listen do |request|
-          if %w[yes да].include?(request.text.downcase)
-            msg = comeout(person)
-          end
+          msg = comeout(person) if %w[yes да].include?(request.text.downcase)
           break
         end
       end

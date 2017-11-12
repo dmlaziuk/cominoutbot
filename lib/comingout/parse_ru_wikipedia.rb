@@ -3,10 +3,9 @@ require_relative 'constants'
 require_relative 'comingout_db'
 
 module Comingout
-
   class ParseRuWikipedia
-
-    WIKI_PAGE = 'https://ru.wikipedia.org/wiki/Проект:ЛГБТ/Списки/Известные_лесбиянки,_геи_и_бисексуалы_России'.freeze
+    WIKI_PAGE = 'https://ru.wikipedia.org/wiki/Проект:ЛГБТ/Списки'\
+      '/Известные_лесбиянки,_геи_и_бисексуалы_России'.freeze
 
     def initialize(db)
       @agent = Mechanize.new
@@ -31,7 +30,7 @@ module Comingout
         td = row.xpath('./td')
         name = td[3].xpath('.//a')
         note = td[4].text
-        note.gsub! /\[\d*?\]/, ''
+        note.gsub!(/\[\d*?\]/, '')
         uri = "https://ru.wikipedia.org#{name.xpath('@href')}"
         @db.add(name.text, uri, note)
         @count += 1

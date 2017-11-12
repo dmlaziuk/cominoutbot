@@ -3,9 +3,7 @@ require_relative 'constants'
 require_relative 'comingout_db'
 
 module Comingout
-
   class ParseImdb
-
     IMDB_PAGE = 'http://www.imdb.com/list/ls072706884/'.freeze
 
     def initialize(db)

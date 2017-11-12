@@ -3,13 +3,11 @@ require 'ferret'
 require_relative 'constants'
 
 module Comingout
-
   class ComingoutDB
-
     attr_reader :redis, :ferret
 
     def initialize
-      @redis = Redis.new(url: ENV["REDIS_URL"]) # url added for heroku.com
+      @redis = Redis.new(url: ENV['REDIS_URL']) # url added for heroku.com
       @redis.flushall
       @ferret = Ferret::I.new(key: :id)
       @redis.setnx Comingout::DB_INDEX, 0
@@ -20,7 +18,7 @@ module Comingout
       @redis.hset "#{Comingout::DB}:#{index}", 'name', name
       @redis.hset "#{Comingout::DB}:#{index}", 'uri', uri
       @redis.hset "#{Comingout::DB}:#{index}", 'note', note
-      prime_names = name.split /\s/
+      prime_names = name.split(/\s/)
       prime_names.each do |each_name|
         @redis.rpush "#{Comingout::DB}:name:#{each_name.downcase}", index
       end

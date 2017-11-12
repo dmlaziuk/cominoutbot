@@ -3,9 +3,7 @@ require_relative 'constants'
 require_relative 'comingout_db'
 
 module Comingout
-
   class ParseWikipedia
-
     WIKI_PAGE = 'https://en.wikipedia.org/wiki/List_of_gay,_lesbian_or_bisexual_people'.freeze
 
     def initialize(db)

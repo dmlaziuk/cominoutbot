@@ -24,7 +24,7 @@ module Comingout
             msg << 'This bot is for finding out celebrities coming out.'
             say(bot, chat, msg)
           else
-            say(bot, chat, do_you_mean(bot, chat))
+            say(bot, chat, ferret_search(bot, chat))
           end
         end
       end
@@ -37,8 +37,9 @@ module Comingout
     end
 
     def do_you_mean(bot, chat)
-      chat_text = chat.text
+      chat_text = Comingout.translit(chat.text)
       chat_text.gsub!(/[*?]/, '') # remove wildcard search
+      found = @db.ferret.search(chat_text) # strict search
       found = @db.ferret.search("#{chat_text}~") # fuzzy search
       max_score = found[:max_score]
       hits = found[:hits]
@@ -63,7 +64,34 @@ module Comingout
       msg
     end
 
-    def dialog(bot, chat)
+    def ferret_search(bot, chat)
+      chat_text = chat.text
+      chat_text.gsub!(/[*?]/, '') # remove wildcard search
+      found = @db.ferret.search(chat_text) # strict search
+      max_score = found[:max_score]
+      hits = found[:hits]
+      do_you_mean(bot, chat) if hits.empty?
+      hits_max = []
+      hits.each { |item| hits_max << item if item[:score] == max_score }
+      msg = "There are #{hits.size} persons with given name:\n"
+      hits.each_with_index do |db_index, counter|
+        doc = @db.ferret[db_index[:doc]]
+        person = @db.get_by_index(doc[:id])
+        msg << "#{counter + 1}. #{person['name']}\n"
+      end
+      if hits_max.size == 1
+        doc = @db.ferret[hits_max.first[:doc]]
+        person = @db.get_by_index(doc[:id])
+        say(bot, chat, "Do you mean <b>#{person['name']}?</b>")
+        bot.listen do |request|
+          msg = comeout(person) if %w[yes да].include?(request.text.downcase)
+          break
+        end
+      end
+      msg
+    end
+
+    def redis_search(bot, chat)
       chat_text = chat.text.downcase
       commands = chat_text.split(' ')
       lists = commands.map do |word|

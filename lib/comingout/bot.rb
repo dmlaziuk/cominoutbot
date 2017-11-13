@@ -24,7 +24,7 @@ module Comingout
             msg << 'This bot is for finding out celebrities coming out.'
             say(bot, chat, msg)
           else
-            say(bot, chat, dialog(bot, chat))
+            say(bot, chat, do_you_mean(bot, chat))
           end
         end
       end
@@ -37,7 +37,7 @@ module Comingout
     end
 
     def do_you_mean(bot, chat)
-      chat_text = Comingout.translit(chat.text.downcase)
+      chat_text = chat.text
       chat_text.gsub!(/[*?]/, '') # remove wildcard search
       found = @db.ferret.search("#{chat_text}~") # fuzzy search
       max_score = found[:max_score]

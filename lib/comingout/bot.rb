@@ -67,26 +67,11 @@ module Comingout
           return
         end
       end
-      msg = "There are #{hits.size} persons with given name:\n"
       if hits.size < 5
-        arr = []
-        hits.each do |db_index|
-          doc = @db.ferret[db_index[:doc]]
-          person = @db.get_by_index(doc[:id])
-          arr << person['name']
-        end
-        ans = Telegram::Bot::Types::ReplyKeyboardMarkup.new(
-            keyboard: [arr], one_time_keyboard: true
-        )
-        bot.api.send_message(chat_id: chat.chat.id, text: msg, reply_markup: ans)
+        five_hits(bot, chat, hits)
         return
       end
-      hits.each_with_index do |db_index, counter|
-        doc = @db.ferret[db_index[:doc]]
-        person = @db.get_by_index(doc[:id])
-        msg << "#{counter + 1}. #{person['name']}\n"
-      end
-      say(bot, chat, msg)
+      muli_hits(bot, chat, hits)
     end
 
     def dialog(bot, chat)
@@ -99,25 +84,38 @@ module Comingout
       hits_max = []
       hits.each { |item| hits_max << item if item[:score] == max_score }
       if hits_max.size == 1
-        doc = @db.ferret[hits_max.first[:doc]]
-        person = @db.get_by_index(doc[:id])
-        say(bot, chat, comeout(person))
+        one_hit(bot, chat, hits_max.first[:doc])
         return
       end
-      msg = "There are #{hits.size} persons with given name:\n"
       if hits.size < 5
-        arr = []
-        hits.each do |db_index|
-          doc = @db.ferret[db_index[:doc]]
-          person = @db.get_by_index(doc[:id])
-          arr << person['name']
-        end
-        ans = Telegram::Bot::Types::ReplyKeyboardMarkup.new(
-          keyboard: [arr], one_time_keyboard: true
-        )
-        bot.api.send_message(chat_id: chat.chat.id, text: msg, reply_markup: ans)
+        five_hits(bot, chat, hits)
         return
       end
+      muli_hits(bot, chat, hits)
+    end
+
+    def one_hit(bot, chat, hit)
+      doc = @db.ferret[hit]
+      person = @db.get_by_index(doc[:id])
+      say(bot, chat, comeout(person))
+    end
+
+    def five_hits(bot, chat, hits)
+      arr = []
+      msg = "There are #{hits.size} persons with given name:\n"
+      hits.each do |db_index|
+        doc = @db.ferret[db_index[:doc]]
+        person = @db.get_by_index(doc[:id])
+        arr << person['name']
+      end
+      ans = Telegram::Bot::Types::ReplyKeyboardMarkup.new(
+        keyboard: arr, one_time_keyboard: true
+      )
+      bot.api.send_message(chat_id: chat.chat.id, text: msg, reply_markup: ans)
+    end
+
+    def muli_hits(bot, chat, hits)
+      msg = "There are #{hits.size} persons with given name:\n"
       hits.each_with_index do |db_index, counter|
         doc = @db.ferret[db_index[:doc]]
         person = @db.get_by_index(doc[:id])

@@ -1,4 +1,3 @@
-require 'set'
 require 'telegram/bot'
 require_relative 'constants'
 require_relative 'comingout_db'
@@ -24,7 +23,7 @@ module Comingout
             msg << 'This bot is for finding out celebrities coming out.'
             say(bot, chat, msg)
           else
-            say(bot, chat, dialog(bot, chat))
+            dialog(bot, chat)
           end
         end
       end
@@ -39,6 +38,9 @@ module Comingout
     def ask(bot, chat, msg, ans)
       bot.api.send_message(chat_id: chat.chat.id, text: msg, reply_markup: ans,
                            parse_mode: 'HTML')
+      response = ''
+      bot.listen { |req| response = req.text; break }
+      response
     end
 
     def do_you_mean(bot, chat)
@@ -46,15 +48,12 @@ module Comingout
       found = @db.ferret.search("#{chat_text}~", limit: :all) # fuzzy search
       max_score = found[:max_score]
       hits = found[:hits]
-      return 'Found no data' if hits.empty?
+      if hits.empty?
+        say(bot, chat, 'Found no data')
+        return
+      end
       hits_max = []
       hits.each { |item| hits_max << item if item[:score] == max_score }
-      msg = "There are #{hits.size} persons with given name:\n"
-      hits.each_with_index do |db_index, counter|
-        doc = @db.ferret[db_index[:doc]]
-        person = @db.get_by_index(doc[:id])
-        msg << "#{counter + 1}. #{person['name']}\n"
-      end
       if hits_max.size == 1
         doc = @db.ferret[hits_max.first[:doc]]
         person = @db.get_by_index(doc[:id])
@@ -62,12 +61,32 @@ module Comingout
         answers = Telegram::Bot::Types::ReplyKeyboardMarkup.new(
           keyboard: [%w[yes no]], one_time_keyboard: true
         )
-        ask(bot, chat, question, answers)
-        response = ''
-        bot.listen { |req| response = req.text; break }
-        msg = comeout(person) if %w[yes да].include?(response.downcase)
+        response = ask(bot, chat, question, answers)
+        if %w[yes да].include?(response.downcase)
+          say(bot, chat, comeout(person))
+          return
+        end
       end
-      msg
+      msg = "There are #{hits.size} persons with given name:\n"
+      if hits.size < 5
+        arr = []
+        hits.each do |db_index|
+          doc = @db.ferret[db_index[:doc]]
+          person = @db.get_by_index(doc[:id])
+          arr << person['name']
+        end
+        ans = Telegram::Bot::Types::ReplyKeyboardMarkup.new(
+            keyboard: [arr], one_time_keyboard: true
+        )
+        bot.api.send_message(chat_id: chat.chat.id, text: msg, reply_markup: ans)
+        return
+      end
+      hits.each_with_index do |db_index, counter|
+        doc = @db.ferret[db_index[:doc]]
+        person = @db.get_by_index(doc[:id])
+        msg << "#{counter + 1}. #{person['name']}\n"
+      end
+      say(bot, chat, msg)
     end
 
     def dialog(bot, chat)
@@ -79,18 +98,32 @@ module Comingout
       return do_you_mean(bot, chat) if hits.empty?
       hits_max = []
       hits.each { |item| hits_max << item if item[:score] == max_score }
+      if hits_max.size == 1
+        doc = @db.ferret[hits_max.first[:doc]]
+        person = @db.get_by_index(doc[:id])
+        say(bot, chat, comeout(person))
+        return
+      end
       msg = "There are #{hits.size} persons with given name:\n"
+      if hits.size < 5
+        arr = []
+        hits.each do |db_index|
+          doc = @db.ferret[db_index[:doc]]
+          person = @db.get_by_index(doc[:id])
+          arr << person['name']
+        end
+        ans = Telegram::Bot::Types::ReplyKeyboardMarkup.new(
+          keyboard: [arr], one_time_keyboard: true
+        )
+        bot.api.send_message(chat_id: chat.chat.id, text: msg, reply_markup: ans)
+        return
+      end
       hits.each_with_index do |db_index, counter|
         doc = @db.ferret[db_index[:doc]]
         person = @db.get_by_index(doc[:id])
         msg << "#{counter + 1}. #{person['name']}\n"
       end
-      if hits_max.size == 1
-        doc = @db.ferret[hits_max.first[:doc]]
-        person = @db.get_by_index(doc[:id])
-        msg = comeout(person)
-      end
-      msg
+      say(bot, chat, msg)
     end
 
     def comeout(person)

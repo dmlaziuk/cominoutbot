@@ -7,7 +7,8 @@ module Comingout
     attr_reader :redis, :ferret
 
     def initialize
-      @redis = Redis.new(url: ENV['REDIS_URL']) # url added for heroku.com
+      #@redis = Redis.new # uncomment this line for local run
+      @redis = Redis.new(url: ENV['REDIS_URL']) # uncomment for  heroku.com
       @redis.flushall
       @ferret = Ferret::I.new(key: :id)
       @redis.setnx Comingout::DB_INDEX, 0

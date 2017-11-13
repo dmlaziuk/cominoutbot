@@ -50,10 +50,7 @@ module Comingout
       found = @db.ferret.search("#{chat_text}~", limit: :all) # fuzzy search
       max_score = found[:max_score]
       hits = found[:hits]
-      if hits.empty?
-        say(bot, chat, 'Found no data')
-        return
-      end
+      return say(bot, chat, 'Found no data') if hits.empty?
       hits_max = []
       hits.each { |hit| hits_max << hit if hit[:score] == max_score }
       if hits_max.size == 1
@@ -87,15 +84,15 @@ module Comingout
     end
 
     def five_hits(bot, chat, hits)
-      arr = []
+      names = []
       msg = "There are #{hits.size} persons with given name:\n"
       hits.each do |db_index|
         doc = @db.ferret[db_index[:doc]]
         person = @db.get_by_index(doc[:id])
-        arr << person['name']
+        names << person['name']
       end
       ans = Telegram::Bot::Types::ReplyKeyboardMarkup.new(
-        keyboard: arr, one_time_keyboard: true
+        keyboard: names, one_time_keyboard: true
       )
       bot.api.send_message(chat_id: chat.chat.id, text: msg, reply_markup: ans)
     end
